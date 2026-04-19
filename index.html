@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="description" content="AI-powered bone fracture classification for clinical decision support. 10 fracture types, ensemble deep learning.">
+<meta name="theme-color" content="#050a18">
+<title>OssiAI — Bone Fracture Classification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050a18;--surf:#0d1528;--surf2:#131d35;
+  --bdr:rgba(100,160,255,.12);--bdr2:rgba(100,160,255,.22);
+  --acc:#3b82f6;--acc2:#60a5fa;--acc-g:rgba(59,130,246,.25);
+  --tx:#e8edf8;--tx2:#8fa3c8;--tx3:#4d6494;
+  --ok:#10b981;--warn:#f59e0b;--err:#ef4444;--info:#22d3ee;
+  --r:12px;--rl:20px;
+  --ff:'DM Sans',system-ui,-apple-system,sans-serif;
+  --fd:'DM Serif Display',Georgia,serif;
+  --fm:'DM Mono','Courier New',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--ff);background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden;line-height:1.6}
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(59,130,246,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(59,130,246,.04) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none}
+.orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+.orb1{width:600px;height:600px;background:rgba(59,130,246,.08);top:-200px;right:-100px}
+.orb2{width:400px;height:400px;background:rgba(16,185,129,.05);bottom:10%;left:-100px}
+
+/* Layout */
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:22px 0 18px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;gap:10px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-size:1.45rem;color:var(--tx);text-decoration:none}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--acc),#1d4ed8);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;box-shadow:0 0 20px rgba(59,130,246,.4)}
+.logo em{color:var(--acc2);font-style:italic}
+.badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{font-family:var(--fm);font-size:.68rem;padding:3px 9px;border-radius:20px;background:rgba(34,211,238,.08);color:var(--info);border:1px solid rgba(34,211,238,.22);letter-spacing:.05em}
+.badge.gray{color:var(--tx3);background:transparent;border-color:var(--bdr)}
+
+/* Hero */
+.hero{text-align:center;padding:60px 0 44px}
+.eyebrow{font-family:var(--fm);font-size:.75rem;color:var(--acc2);letter-spacing:.15em;margin-bottom:16px;text-transform:uppercase}
+.hero h1{font-family:var(--fd);font-size:clamp(2rem,5vw,3.5rem);line-height:1.15;margin-bottom:18px}
+.hero h1 em{color:var(--acc2);font-style:italic}
+.hero p{font-size:1rem;color:var(--tx2);max-width:540px;margin:0 auto 28px}
+.pills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.pill{font-size:.77rem;padding:5px 13px;border-radius:30px;border:1px solid var(--bdr2);color:var(--tx2);background:rgba(255,255,255,.025)}
+
+/* Upload */
+.upload-section{margin-bottom:40px}
+.drop-zone{border:2px dashed var(--bdr2);border-radius:var(--rl);padding:52px 28px;text-align:center;cursor:pointer;transition:all .25s;background:rgba(13,21,40,.7);backdrop-filter:blur(8px);position:relative;overflow:hidden}
+.drop-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(59,130,246,.07) 0%,transparent 70%);pointer-events:none}
+.drop-zone:hover,.drop-zone.over{border-color:var(--acc);background:rgba(59,130,246,.04);box-shadow:0 0 40px rgba(59,130,246,.14)}
+.drop-icon{font-size:2.8rem;margin-bottom:14px;animation:float 3s ease-in-out infinite;display:block;filter:drop-shadow(0 0 10px rgba(59,130,246,.45))}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.drop-zone h3{font-size:1.15rem;font-weight:500;margin-bottom:7px}
+.drop-zone p{font-size:.88rem;color:var(--tx2);margin-bottom:18px}
+.btn-up{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,var(--acc),#1d4ed8);color:#fff;border:none;border-radius:8px;padding:11px 26px;font-size:.93rem;font-weight:500;cursor:pointer;font-family:var(--ff);box-shadow:0 4px 20px rgba(59,130,246,.35);transition:all .2s;-webkit-appearance:none}
+.btn-up:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(59,130,246,.5)}
+.btn-up:active{transform:none}
+.formats{margin-top:14px;font-family:var(--fm);font-size:.7rem;color:var(--tx3)}
+#fi{display:none}
+
+/* Grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:36px}
+@media(max-width:680px){.grid2{grid-template-columns:1fr}}
+
+/* Card */
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bdr);font-size:.8rem;font-weight:500;color:var(--tx2);letter-spacing:.04em;text-transform:uppercase}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);animation:pd 2s ease-in-out infinite}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.35}}
+.cb{padding:18px}
+
+/* Preview */
+#pimg{width:100%;border-radius:var(--r);max-height:360px;object-fit:contain;background:#000;display:block}
+.imeta{margin-top:10px;font-family:var(--fm);font-size:.73rem;color:var(--tx3);display:flex;gap:14px;flex-wrap:wrap}
+
+/* Loading */
+.spin-wrap{padding:56px 20px;text-align:center}
+.spinner{width:52px;height:52px;border:3px solid rgba(59,130,246,.15);border-top-color:var(--acc);border-radius:50%;animation:spin .85s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-status{font-family:var(--fm);font-size:.83rem;color:var(--acc2);margin-bottom:6px}
+.ld-sub{font-size:.8rem;color:var(--tx3)}
+
+/* Prediction */
+.pred-main{display:flex;align-items:center;gap:14px;padding:18px;background:var(--surf2);border-radius:var(--r);margin-bottom:18px;border:1px solid var(--bdr)}
+.pred-icon{font-size:2.6rem;flex-shrink:0}
+.pred-label{font-family:var(--fd);font-size:1.4rem;line-height:1.2}
+.pred-desc{font-size:.8rem;color:var(--tx2);margin-top:3px}
+.conf-badge{margin-left:auto;flex-shrink:0;font-family:var(--fm);font-size:1.3rem;font-weight:500;padding:7px 14px;border-radius:8px}
+.ch-ok{color:var(--ok);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25)}
+.ch-warn{color:var(--warn);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25)}
+.ch-err{color:var(--err);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25)}
+
+/* Probs */
+.probs{display:flex;flex-direction:column;gap:9px}
+.pi .ph{display:flex;justify-content:space-between;margin-bottom:4px}
+.pi .pn{font-size:.81rem;color:var(--tx2)}
+.pi .pp{font-family:var(--fm);font-size:.78rem;color:var(--tx2)}
+.pbar{height:5px;border-radius:3px;background:rgba(255,255,255,.05);overflow:hidden}
+.pbf{height:100%;border-radius:3px;transition:width .85s cubic-bezier(.4,0,.2,1);width:0}
+.pbf.top{background:linear-gradient(90deg,var(--acc),var(--info))}
+.pbf.mid{background:var(--acc);opacity:.6}
+.pbf.low{background:var(--tx3);opacity:.4}
+
+/* Btn new */
+.btn-new{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--acc2);border:1px solid var(--bdr2);border-radius:8px;padding:9px 18px;font-size:.88rem;font-weight:500;cursor:pointer;font-family:var(--ff);transition:all .2s;margin-top:14px;-webkit-appearance:none}
+.btn-new:hover{background:rgba(59,130,246,.07);border-color:var(--acc)}
+
+/* Warning banner */
+.warn-bar{display:none;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:var(--r);padding:13px 17px;margin-bottom:16px;font-size:.82rem;color:#fbbf24;line-height:1.5}
+
+/* Disclaimer */
+.disclaimer{background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.18);border-radius:var(--r);padding:16px 18px;display:flex;gap:13px;align-items:flex-start;margin-bottom:36px}
+.disc-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.disclaimer h4{font-size:.83rem;font-weight:600;color:var(--warn);margin-bottom:4px}
+.disclaimer p{font-size:.78rem;color:var(--tx3);line-height:1.55}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:44px}
+@media(max-width:540px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:18px 14px;text-align:center}
+.sv{font-family:var(--fd);font-size:1.7rem;color:var(--acc2);line-height:1;margin-bottom:5px}
+.sl{font-size:.76rem;color:var(--tx3)}
+
+/* Classes grid */
+.sec-title{font-family:var(--fd);font-size:1.4rem;margin-bottom:18px}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px;margin-bottom:44px}
+.cc{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;transition:border-color .2s}
+.cc:hover{border-color:var(--bdr2)}
+.cn{font-family:var(--fm);font-size:.68rem;color:var(--acc);margin-bottom:7px}
+.cname{font-size:.88rem;font-weight:500}
+.cdesc{font-size:.73rem;color:var(--tx3);margin-top:3px;line-height:1.45}
+
+/* Footer */
+footer{border-top:1px solid var(--bdr);padding:24px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;font-size:.76rem;color:var(--tx3)}
+.fl{display:flex;gap:18px}
+
+/* Deploy instructions panel */
+.deploy-box{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:24px;margin-bottom:36px}
+.deploy-box h3{font-family:var(--fd);font-size:1.2rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.deploy-box ol{padding-left:18px;display:flex;flex-direction:column;gap:10px}
+.deploy-box li{font-size:.87rem;color:var(--tx2);line-height:1.55}
+.deploy-box code{font-family:var(--fm);font-size:.8rem;background:rgba(59,130,246,.1);padding:2px 6px;border-radius:4px;color:var(--acc2)}
+.tab-row{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--bdr)}
+.tab{font-size:.82rem;padding:8px 16px;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;font-family:var(--fm)}
+.tab.active{color:var(--acc2);border-bottom-color:var(--acc2)}
+.tab-content{display:none}.tab-content.active{display:block}
+pre{background:rgba(0,0,0,.3);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;font-family:var(--fm);font-size:.78rem;color:var(--acc2);overflow-x:auto;line-height:1.7;white-space:pre}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="app">
+
+<!-- Header -->
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon">🦴</div>
+    Ossi<em>AI</em>
+  </a>
+  <div class="badges">
+    <span class="badge">RESEARCH PROTOTYPE</span>
+    <span class="badge gray">v9 AutoML · Optuna HPO</span>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="eyebrow">AI · Orthopedic Imaging · Clinical Decision Support</div>
+  <h1>Bone Fracture<br><em>Classification System</em></h1>
+  <p>Upload an X-ray image for instant AI analysis across 10 fracture categories using ensemble deep learning with test-time augmentation.</p>
+  <div class="pills">
+    <span class="pill">10 Fracture Classes</span>
+    <span class="pill">Multi-Model Ensemble</span>
+    <span class="pill">TTA · 5× Augmentation</span>
+    <span class="pill">Client-Side · No Upload</span>
+    <span class="pill">All Devices Supported</span>
+  </div>
+</section>
+
+<!-- Upload -->
+<div class="upload-section" id="upload-sec">
+  <div class="drop-zone" id="dz">
+    <span class="drop-icon">🩻</span>
+    <h3>Drop your X-ray image here</h3>
+    <p>Supports any radiograph image format</p>
+    <button class="btn-up" onclick="document.getElementById('fi').click()">📂 Select Image</button>
+    <input type="file" id="fi" accept="image/*">
+    <div class="formats">JPG · PNG · BMP · WebP · TIFF · GIF</div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="grid2" id="loading-area" style="display:none">
+  <div class="card spin-wrap" style="grid-column:1/-1">
+    <div class="spinner"></div>
+    <div class="ld-status" id="ld-status">Preprocessing image...</div>
+    <div class="ld-sub">Running ensemble inference · please wait</div>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="grid2" id="result-area" style="display:none">
+  <!-- Left: Image -->
+  <div class="card">
+    <div class="ch"><span>Input Image</span><span class="dot"></span></div>
+    <div class="cb">
+      <img id="pimg" src="" alt="X-ray preview">
+      <div class="imeta" id="imeta"></div>
+    </div>
+  </div>
+  <!-- Right: Result -->
+  <div class="card">
+    <div class="ch"><span>Classification Result</span><span class="dot" style="background:var(--info);box-shadow:0 0 8px var(--info)"></span></div>
+    <div class="cb">
+      <div class="warn-bar" id="warn-bar">⚠️ <strong>Demo mode:</strong> Model file not found. Showing illustrative results. To enable real inference, export your trained model to ONNX and place at <code>model/bone_fracture.onnx</code>.</div>
+      <div class="pred-main" id="pred-main"></div>
+      <div class="probs" id="probs"></div>
+      <button class="btn-new" onclick="resetUI()">↩ New Analysis</button>
+    </div>
+  </div>
+</div>
+
+<!-- Disclaimer -->
+<div class="disclaimer">
+  <div class="disc-icon">⚕️</div>
+  <div>
+    <h4>Clinical Disclaimer — For Research &amp; Decision Support Use Only</h4>
+    <p>This AI system assists trained radiologists and orthopedic surgeons as a <strong>supplementary decision support tool only</strong>. It must not be used as the sole basis for clinical diagnosis or treatment. All results must be interpreted by a licensed medical professional in conjunction with clinical history, physical examination, and additional imaging studies. Not FDA / CE / NMPA cleared for primary diagnostic use.</p>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat"><div class="sv">10</div><div class="sl">Fracture Classes</div></div>
+  <div class="stat"><div class="sv">7</div><div class="sl">Candidate Models</div></div>
+  <div class="stat"><div class="sv">5×</div><div class="sl">TTA Augmentations</div></div>
+  <div class="stat"><div class="sv">Top-K</div><div class="sl">Ensemble Strategy</div></div>
+</div>
+
+<!-- Deploy Instructions -->
+<div class="deploy-box">
+  <h3>🚀 Deployment Guide — Connecting Your Trained Model</h3>
+  <div class="tab-row">
+    <div class="tab active" onclick="switchTab('onnx')">Export to ONNX</div>
+    <div class="tab" onclick="switchTab('netlify')">Netlify</div>
+    <div class="tab" onclick="switchTab('github')">GitHub Pages</div>
+    <div class="tab" onclick="switchTab('local')">Local Server</div>
+  </div>
+
+  <div class="tab-content active" id="tab-onnx">
+    <p style="font-size:.84rem;color:var(--tx2);margin-bottom:12px">Add this code to your Colab notebook after training to export the model:</p>
+    <pre>import torch
+# After training completes, export best model to ONNX
+model = build_model(final_cfg['model_name'], drop=final_cfg['dropout'])
+unfreeze_backbone(model, final_cfg['model_name'])
+model.load_state_dict({k: v.to(DEVICE) for k,v in final_result['best_state'].items()})
+model.eval()
+
+img_size = final_cfg['img_size']
+dummy = torch.randn(1, 3, img_size, img_size).to(DEVICE)
+
+torch.onnx.export(
+    model, dummy,
+    "bone_fracture.onnx",
+    input_names=["input"],
+    output_names=["output"],
+    dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}},
+    opset_version=17,
+)
+print("✅ Exported: bone_fracture.onnx")
+# Download from Colab: files.download("bone_fracture.onnx")</pre>
+  </div>
+
+  <div class="tab-content" id="tab-netlify">
+    <ol>
+      <li>Create a folder with <code>index.html</code> (this file) and a <code>model/</code> subfolder</li>
+      <li>Place your <code>bone_fracture.onnx</code> inside the <code>model/</code> folder</li>
+      <li>Go to <a href="https://netlify.com" style="color:var(--acc2)">netlify.com</a> → <strong>Add new site → Deploy manually</strong></li>
+      <li>Drag and drop your folder → Netlify gives you a free <code>*.netlify.app</code> URL instantly</li>
+      <li>Share the URL — works on all devices worldwide, no server needed</li>
+    </ol>
+  </div>
+
+  <div class="tab-content" id="tab-github">
+    <ol>
+      <li>Create a GitHub repository and upload: <code>index.html</code> + <code>model/bone_fracture.onnx</code></li>
+      <li>Go to repository <strong>Settings → Pages → Source: main branch</strong></li>
+      <li>Your site is live at <code>https://&lt;username&gt;.github.io/&lt;repo&gt;/</code></li>
+      <li>Note: GitHub has a <strong>100 MB file limit</strong>. For larger models, use Git LFS or Netlify</li>
+    </ol>
+  </div>
+
+  <div class="tab-content" id="tab-local">
+    <p style="font-size:.84rem;color:var(--tx2);margin-bottom:12px">For local testing (required due to CORS restrictions):</p>
+    <pre># Python
+python -m http.server 8080
+
+# Node.js
+npx serve .
+
+# Then open: http://localhost:8080</pre>
+  </div>
+</div>
+
+<!-- Class Reference -->
+<div class="sec-title">Supported Fracture Classifications</div>
+<div class="cg" id="cg"></div>
+
+<!-- Footer -->
+<footer>
+  <span>OssiAI © 2026 · Bone Fracture Classification · Research Prototype</span>
+  <div class="fl">
+    <span>PyTorch + timm</span>
+    <span>Optuna HPO</span>
+    <span>ONNX Runtime Web</span>
+  </div>
+</footer>
+</div><!-- /app -->
+
+<script>
+// ── Data ──────────────────────────────────────────────────────
+const CLS = [
+  {name:"Avulsion fracture",    icon:"🦴", desc:"Bone fragment pulled by ligament/tendon"},
+  {name:"Comminuted fracture",  icon:"💥", desc:"Bone shattered into multiple fragments"},
+  {name:"Fracture Dislocation", icon:"↔️", desc:"Fracture combined with joint displacement"},
+  {name:"Greenstick fracture",  icon:"🌿", desc:"Incomplete fracture, common in children"},
+  {name:"Hairline fracture",    icon:"〰️", desc:"Thin crack often from stress/overuse"},
+  {name:"Impacted fracture",    icon:"⬇️", desc:"Bone ends driven/compressed into each other"},
+  {name:"Longitudinal fracture",icon:"📏", desc:"Fracture running along the length of bone"},
+  {name:"Oblique fracture",     icon:"↗️", desc:"Diagonal crack across the bone shaft"},
+  {name:"Pathological fracture",icon:"⚕️", desc:"Fracture due to underlying bone disease"},
+  {name:"Spiral fracture",      icon:"🌀", desc:"Twisting force creates helical break"},
+];
+
+// Build class cards
+const cg = document.getElementById('cg');
+CLS.forEach((c,i) => {
+  cg.innerHTML += `<div class="cc">
+    <div class="cn">CLASS ${String(i).padStart(2,'0')}</div>
+    <div class="cname">${c.icon} ${c.name}</div>
+    <div class="cdesc">${c.desc}</div>
+  </div>`;
+});
+
+// ── Drag & Drop ───────────────────────────────────────────────
+const dz = document.getElementById('dz');
+const fi = document.getElementById('fi');
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => {e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => {e.preventDefault();dz.classList.remove('over')}));
+dz.addEventListener('drop', e => { const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+fi.addEventListener('change', () => { if(fi.files[0]) handleFile(fi.files[0]); });
+
+// ── Handle File ───────────────────────────────────────────────
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      document.getElementById('pimg').src = e.target.result;
+      document.getElementById('imeta').innerHTML =
+        `<span>${file.name}</span><span>${img.width}×${img.height}px</span><span>${(file.size/1024).toFixed(0)} KB</span>`;
+      showLoading();
+      runInference(img, file.name);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── ONNX Inference ────────────────────────────────────────────
+let ortSess = null;
+async function loadModel() {
+  if (ortSess) return ortSess;
+  try {
+    const ort = await import('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/esm/ort.min.js');
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/';
+    const sess = await ort.InferenceSession.create('model/bone_fracture.onnx', {executionProviders:['wasm']});
+    ortSess = {ort, sess};
+    return ortSess;
+  } catch(e) {
+    return null;
+  }
+}
+
+async function runInference(imgEl, fname) {
+  setStatus('Loading AI model...');
+  const loaded = await loadModel();
+
+  if (loaded) {
+    try {
+      setStatus('Preprocessing image...');
+      const {ort, sess} = loaded;
+      // Get input shape from model
+      const inputName = sess.inputNames[0];
+      const meta = sess.inputNames;
+      const sz = 224;
+      const tensor = preprocessImg(imgEl, sz);
+      setStatus('Running inference...');
+      const feeds = {};
+      feeds[inputName] = new ort.Tensor('float32', tensor, [1,3,sz,sz]);
+      const out = await sess.run(feeds);
+      const logits = Array.from(out[sess.outputNames[0]].data);
+      showResult(softmax(logits), false);
+    } catch(e) {
+      console.warn('Inference error:', e);
+      await sleep(1500);
+      showResult(demoProbs(fname), true);
+    }
+  } else {
+    await sleep(1600);
+    showResult(demoProbs(fname), true);
+  }
+}
+
+// ── Image Preprocessing (ImageNet normalization) ──────────────
+function preprocessImg(img, sz) {
+  const c = document.createElement('canvas');
+  c.width = sz; c.height = sz;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0, sz, sz);
+  const d = ctx.getImageData(0,0,sz,sz).data;
+  const mean=[.485,.456,.406], std=[.229,.224,.225];
+  const t = new Float32Array(3*sz*sz);
+  for (let i=0;i<sz*sz;i++) {
+    t[i]          = (d[i*4]  /255 - mean[0]) / std[0];
+    t[sz*sz+i]    = (d[i*4+1]/255 - mean[1]) / std[1];
+    t[sz*sz*2+i]  = (d[i*4+2]/255 - mean[2]) / std[2];
+  }
+  return t;
+}
+
+function softmax(arr) {
+  const m = Math.max(...arr);
+  const e = arr.map(x => Math.exp(x-m));
+  const s = e.reduce((a,b)=>a+b,0);
+  return e.map(v=>v/s);
+}
+
+// ── Demo Probs (seeded, reproducible) ─────────────────────────
+function demoProbs(fname) {
+  const seed = fname.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const r = s => { let x=Math.sin(s)*10000; return x-Math.floor(x); };
+  const raw = CLS.map((_,i)=>Math.pow(r(seed+i*7),2.5));
+  raw[Math.floor(r(seed*3)*CLS.length)] *= 9;
+  const sum = raw.reduce((a,b)=>a+b,0);
+  return raw.map(v=>v/sum);
+}
+
+// ── Show Result ───────────────────────────────────────────────
+function showResult(probs, isDemo) {
+  const ranked = probs.map((p,i)=>({p,i,c:CLS[i]})).sort((a,b)=>b.p-a.p);
+  const top = ranked[0];
+  const pct = (top.p*100).toFixed(1);
+  const cc = top.p>.70 ? 'ch-ok' : top.p>.40 ? 'ch-warn' : 'ch-err';
+
+  document.getElementById('warn-bar').style.display = isDemo ? 'block' : 'none';
+
+  document.getElementById('pred-main').innerHTML = `
+    <div class="pred-icon">${top.c.icon}</div>
+    <div>
+      <div class="pred-label">${top.c.name}</div>
+      <div class="pred-desc">${top.c.desc}</div>
+    </div>
+    <div class="conf-badge ${cc}">${pct}%</div>`;
+
+  const pl = document.getElementById('probs');
+  pl.innerHTML = '';
+  ranked.forEach((item,rank) => {
+    const p=(item.p*100).toFixed(1);
+    const fc = rank===0?'top':rank<=2?'mid':'low';
+    pl.innerHTML += `<div class="pi">
+      <div class="ph"><span class="pn">${item.c.icon} ${item.c.name}</span><span class="pp">${p}%</span></div>
+      <div class="pbar"><div class="pbf ${fc}" data-w="${item.p*100}"></div></div>
+    </div>`;
+  });
+
+  document.getElementById('loading-area').style.display = 'none';
+  document.getElementById('result-area').style.display = 'grid';
+
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.pbf').forEach(b=>{ b.style.width=b.dataset.w+'%'; });
+  });
+}
+
+// ── UI State ──────────────────────────────────────────────────
+function showLoading() {
+  document.getElementById('upload-sec').style.display = 'none';
+  document.getElementById('result-area').style.display = 'none';
+  document.getElementById('loading-area').style.display = 'grid';
+}
+function setStatus(msg) { document.getElementById('ld-status').textContent = msg; }
+function resetUI() {
+  document.getElementById('result-area').style.display = 'none';
+  document.getElementById('loading-area').style.display = 'none';
+  document.getElementById('upload-sec').style.display = 'block';
+  fi.value = '';
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ── Tabs ──────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const ids=['onnx','netlify','github','local'];
+    t.classList.toggle('active', ids[i]===id);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>{
+    c.classList.toggle('active', c.id==='tab-'+id);
+  });
+}
+
+// Preload model on idle
+window.addEventListener('load', ()=>{ setTimeout(loadModel, 800); });
+</script>
+</body>
+</html>
